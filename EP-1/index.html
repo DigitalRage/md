@@ -66,7 +66,10 @@
 			position: relative;
 			overflow: hidden;
 			background: #000;
-			flex: 1;
+			width: 100%;
+			aspect-ratio: 16 / 9;
+			flex: 0 1 auto;
+			max-height: calc(100vh - 170px);
 			min-height: 0;
 		}
 		#motion {
@@ -217,7 +220,8 @@
 		let activeSegment = 1;
 		let currentTimeValue = 0;
 		let playing = false;
-		let lastFrameStamp = 0;
+		let playbackStartStamp = 0;
+		let playbackStartTime = 0;
 		let animationFrame;
 
 		const srcFor = number => `MD-EP1-AWEBP/EP1-${number}.webp`;
@@ -263,9 +267,7 @@
 
 		function tick(timestamp) {
 			if (!playing) return;
-			if (!lastFrameStamp) lastFrameStamp = timestamp;
-			const deltaSeconds = (timestamp - lastFrameStamp) / 1000;
-			const nextTime = currentTimeValue + deltaSeconds;
+			const nextTime = playbackStartTime + (timestamp - playbackStartStamp) / 1000;
 			if (nextTime >= totalDuration - 0.01) {
 				renderFromTime(totalDuration - 0.01);
 				playing = false;
@@ -274,15 +276,15 @@
 				return;
 			}
 			renderFromTime(nextTime);
-			lastFrameStamp = timestamp;
 			animationFrame = requestAnimationFrame(tick);
 		}
 
 		function togglePlayback() {
 			playing = !playing;
 			playButton.textContent = playing ? '\u23F8' : '\u25B6';
-			lastFrameStamp = 0;
 			if (playing) {
+				playbackStartStamp = performance.now();
+				playbackStartTime = currentTimeValue;
 				animationFrame = requestAnimationFrame(tick);
 			} else {
 				cancelAnimationFrame(animationFrame);
@@ -293,8 +295,7 @@
 			loading.hidden = true;
 		});
 		image.addEventListener('error', () => {
-			loading.textContent = 'Frame load failed — retrying first frame';
-			image.src = srcFor(1);
+			loading.textContent = `Frame ${activeSegment} failed to load`;
 		});
 
 		playButton.addEventListener('click', togglePlayback);
