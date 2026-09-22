@@ -146,11 +146,24 @@
 			font-weight: 700;
 			letter-spacing: .04em;
 		}
-		.meta-row {
-			display: none;
+		.hud {
+			position: absolute;
+			left: 12px;
+			bottom: 12px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			background: rgba(0,0,0,.45);
+			border: 1px solid rgba(255,255,255,.12);
+			font-size: 11px;
+			color: var(--muted);
+			pointer-events: none;
 		}
-		.segment-strip {
-			display: none;
+		.hud strong {
+			color: var(--text);
+			font-weight: 700;
 		}
 		@media (max-width: 760px) {
 			.seek-row { grid-template-columns: 1fr; }
@@ -165,8 +178,13 @@
 	<main>
 		<div class="player-shell">
 			<div class="screen">
-				<img id="motion" alt="Episode 1 motion frame">
+				<img id="motion" src="MD-EP1-AWEBP/EP1-1.webp" alt="Episode 1 motion frame" loading="eager" decoding="sync">
 				<div class="loading" id="loading">Loading segment 1...</div>
+				<div class="hud" aria-live="polite">
+					<strong id="segment-number">1</strong>
+					<span>/ 65</span>
+					<span id="cache-status">Loading sequence...</span>
+				</div>
 			</div>
 			<div class="controls">
 				<div class="seek-row">
@@ -273,6 +291,10 @@
 
 		image.addEventListener('load', () => {
 			loading.hidden = true;
+		});
+		image.addEventListener('error', () => {
+			loading.textContent = 'Frame load failed — retrying first frame';
+			image.src = srcFor(1);
 		});
 
 		playButton.addEventListener('click', togglePlayback);
