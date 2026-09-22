@@ -269,6 +269,9 @@
 			pausedFrame.hidden = true;
 			image.hidden = false;
 			image.src = srcFor(activeSegment);
+			if (!playing) {
+				image.addEventListener('load', freezeCurrentFrame, { once: true });
+			}
 			segmentNumber.textContent = activeSegment;
 			loading.textContent = `Loading frame ${activeSegment}...`;
 			loading.hidden = false;
@@ -311,8 +314,17 @@
 				animationFrame = requestAnimationFrame(tick);
 			} else {
 				cancelAnimationFrame(animationFrame);
-				freezeCurrentFrame();
+				if (image.complete && image.naturalWidth) {
+					freezeCurrentFrame();
+				} else {
+					image.addEventListener('load', freezeCurrentFrame, { once: true });
+				}
 			}
+		}
+
+		function pausePlayback() {
+			if (playing) togglePlayback();
+			else cancelAnimationFrame(animationFrame);
 		}
 
 		function freezeCurrentFrame() {
@@ -346,27 +358,25 @@
 
 		playButton.addEventListener('click', togglePlayback);
 		document.querySelector('#restart').addEventListener('click', () => {
-			cancelAnimationFrame(animationFrame);
-			playing = false;
-			playButton.textContent = '\u25B6';
+			pausePlayback();
 			renderFromTime(0);
 		});
-		document.querySelector('#rewind').addEventListener('click', () => renderFromTime(currentTimeValue - skipDuration));
-		document.querySelector('#forward').addEventListener('click', () => renderFromTime(currentTimeValue + skipDuration));
+		document.querySelector('#rewind').addEventListener('click', () => {
+			pausePlayback();
+			renderFromTime(currentTimeValue - skipDuration);
+		});
+		document.querySelector('#forward').addEventListener('click', () => {
+			pausePlayback();
+			renderFromTime(currentTimeValue + skipDuration);
+		});
 		document.querySelector('#previous-frame').addEventListener('click', () => moveToSegment(activeSegment - 1));
 		document.querySelector('#next-frame').addEventListener('click', () => moveToSegment(activeSegment + 1));
 		document.querySelector('#end').addEventListener('click', () => {
-			cancelAnimationFrame(animationFrame);
-			playing = false;
-			playButton.textContent = '\u25B6';
+			pausePlayback();
 			renderFromTime(totalDuration - 0.01);
 		});
 		seek.addEventListener('input', (event) => {
-			cancelAnimationFrame(animationFrame);
-			if (playing) {
-				playing = false;
-				playButton.textContent = '\u25B6';
-			}
+			pausePlayback();
 			renderFromTime(Number(event.target.value));
 		});
 
