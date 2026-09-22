@@ -7,20 +7,22 @@
 	<style>
 		:root {
 			color-scheme: dark;
-			--bg: #0f0f0f;
-			--panel: #181818;
-			--panel-2: #202020;
-			--line: #303030;
-			--muted: #a7a7a7;
-			--text: #f3f3f3;
-			--chip: #242424;
+			--bg: #000;
+			--panel: #121212;
+			--line: rgba(255,255,255,.12);
+			--muted: #a9a9a9;
+			--text: #f2f2f2;
+			--chip: rgba(255,255,255,.08);
 			--red: #ff0033;
 		}
 		* { box-sizing: border-box; }
+		html, body {
+			height: 100%;
+			overflow: hidden;
+		}
 		body {
 			margin: 0;
-			min-height: 100vh;
-			background: #000;
+			background: var(--bg);
 			color: var(--text);
 			font: 14px/1.4 Arial, Helvetica, sans-serif;
 		}
@@ -29,12 +31,12 @@
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			width: min(1280px, calc(100% - 28px));
+			width: min(100%, calc(100% - 28px));
 			margin: 0 auto;
-			padding: 16px 0 12px;
+			padding: 12px 0 8px;
 		}
 		.brand {
-			font-size: 17px;
+			font-size: 15px;
 			font-weight: 700;
 			letter-spacing: -0.03em;
 			text-decoration: none;
@@ -43,25 +45,29 @@
 		.back {
 			color: var(--muted);
 			text-decoration: none;
-			font-size: 13px;
+			font-size: 12px;
 		}
 		.back:hover, .back:focus-visible { color: var(--text); }
 		main {
-			width: min(1280px, calc(100% - 28px));
-			margin: 0 auto 64px;
+			width: 100%;
+			height: calc(100vh - 54px);
+			display:flex;
+			flex-direction:column;
+			padding: 0 0 12px;
 		}
 		.player-shell {
-			padding: 8px 8px 0;
-			border-radius: 18px;
-			background: #0a0a0a;
-			border: 1px solid #191919;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			background: #000;
+			padding: 0 0 10px;
 		}
 		.screen {
 			position: relative;
 			overflow: hidden;
-			border-radius: 12px;
 			background: #000;
-			aspect-ratio: 16 / 9;
+			flex: 1;
+			min-height: 0;
 		}
 		#motion {
 			display: block;
@@ -76,23 +82,23 @@
 			display: grid;
 			place-items: center;
 			color: #9f9f9f;
-			font-size: 13px;
+			font-size: 12px;
 			letter-spacing: .08em;
 			text-transform: uppercase;
 			pointer-events: none;
 			background: rgba(0,0,0,.18);
 		}
 		.controls {
-			padding: 12px 12px 16px;
-			background: rgba(20,20,20,.9);
-			border-bottom-left-radius: 12px;
-			border-bottom-right-radius: 12px;
+			padding: 8px 12px 10px;
+			background: rgba(18,18,18,.96);
+			border-top: 1px solid var(--line);
+			border-bottom: 1px solid var(--line);
 		}
 		.seek-row {
 			display: grid;
 			grid-template-columns: 1fr auto;
 			align-items: center;
-			gap: 18px;
+			gap: 12px;
 		}
 		input[type="range"] {
 			width: 100%;
@@ -109,12 +115,13 @@
 		.button-row {
 			display: flex;
 			align-items: center;
+			justify-content: center;
 			gap: 8px;
-			margin-top: 10px;
+			margin-top: 8px;
 		}
 		button {
 			border: 0;
-			padding: 9px 12px;
+			padding: 8px 12px;
 			border-radius: 999px;
 			background: var(--chip);
 			color: var(--text);
@@ -123,7 +130,7 @@
 			transition: background .15s ease, transform .15s ease;
 		}
 		button:hover, button:focus-visible {
-			background: #2d2d2d;
+			background: rgba(255,255,255,.14);
 			outline: none;
 		}
 		button:active { transform: scale(.98); }
@@ -135,69 +142,18 @@
 			color: #111;
 		}
 		.skip {
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 700;
 			letter-spacing: .04em;
 		}
 		.meta-row {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 20px;
-			margin-top: 18px;
-			padding-top: 18px;
-			border-top: 1px solid var(--line);
-		}
-		.title {
-			margin: 0;
-			font-size: clamp(1.5rem, 2.8vw, 2.2rem);
-			letter-spacing: -0.05em;
-		}
-		.meta {
-			margin: 5px 0 0;
-			color: var(--muted);
-		}
-		.cache-box {
-			padding: 10px 12px;
-			border: 1px solid var(--line);
-			border-radius: 10px;
-			background: #111;
-			color: var(--muted);
-			font-size: 12px;
-			text-align: right;
-		}
-		.cache-box strong {
-			color: var(--text);
-			font-weight: 700;
+			display: none;
 		}
 		.segment-strip {
-			display: flex;
-			gap: 8px;
-			overflow-x: auto;
-			padding: 14px 2px 4px;
-			margin-top: 18px;
-		}
-		.segment-pill {
-			flex: 0 0 64px;
-			padding: 7px 0;
-			border: 1px solid var(--line);
-			border-radius: 8px;
-			background: #101010;
-			color: var(--muted);
-			text-align: center;
-			font-size: 11px;
-			cursor: pointer;
-		}
-		.segment-pill.active {
-			background: rgba(255,0,51,.12);
-			border-color: rgba(255,0,51,.5);
-			color: var(--text);
+			display: none;
 		}
 		@media (max-width: 760px) {
-			header, main { width: min(100% - 18px, 1280px); }
 			.seek-row { grid-template-columns: 1fr; }
-			.meta-row { display: block; }
-			.cache-box { margin-top: 12px; text-align: left; }
 		}
 	</style>
 </head>
@@ -218,25 +174,20 @@
 					<span class="time"><span id="current-time">0:00</span> / 27:05</span>
 				</div>
 				<div class="button-row">
-					<button class="play" id="play" type="button" aria-label="Play or pause">&#9654;</button>
+					<button class="skip" id="restart" type="button" aria-label="Restart video">&#9205;</button>
 					<button class="skip" id="rewind" type="button" aria-label="Rewind 25 seconds">&#8634; 25s</button>
+					<button class="play" id="play" type="button" aria-label="Play or pause">&#9654;</button>
 					<button class="skip" id="forward" type="button" aria-label="Fast forward 25 seconds">25s &#8635;</button>
+					<button class="skip" id="end" type="button" aria-label="Jump to end">&#9203;</button>
 				</div>
 			</div>
 		</div>
-		<div class="meta-row">
-			<div>
-				<h1 class="title">Episode 1</h1>
-				<p class="meta">Frame <span id="segment-number">1</span> of 65 · 25 seconds per image</p>
-			</div>
-			<div class="cache-box" aria-live="polite"><strong id="cache-status">Preparing nearby frames...</strong><br>Previous + next 10 cached</div>
-		</div>
-		<div id="segment-strip" class="segment-strip" aria-label="Nearby frame list"></div>
 	</main>
 	<script>
 		const segmentCount = 65;
 		const segmentDuration = 25;
 		const cacheRadius = 10;
+		const totalDuration = segmentCount * segmentDuration;
 		const image = document.querySelector('#motion');
 		const loading = document.querySelector('#loading');
 		const seek = document.querySelector('#seek');
@@ -244,16 +195,20 @@
 		const segmentNumber = document.querySelector('#segment-number');
 		const cacheStatus = document.querySelector('#cache-status');
 		const playButton = document.querySelector('#play');
-		const strip = document.querySelector('#segment-strip');
 		const images = new Map();
 		let activeSegment = 1;
-		let elapsed = 0;
+		let currentTimeValue = 0;
 		let playing = false;
-		let lastFrame = 0;
+		let lastFrameStamp = 0;
 		let animationFrame;
 
 		const srcFor = number => `MD-EP1-AWEBP/EP1-${number}.webp`;
-		const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+		const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+		const formatTime = seconds => {
+			const mins = Math.floor(seconds / 60);
+			const secs = Math.floor(seconds % 60);
+			return `${mins}:${String(secs).padStart(2, '0')}`;
+		};
 
 		function preload(number) {
 			if (number < 1 || number > segmentCount || images.has(number)) return;
@@ -262,32 +217,15 @@
 			images.set(number, preloaded);
 		}
 
-		function buildSegmentStrip() {
-			strip.innerHTML = '';
-			for (let i = 1; i <= segmentCount; i++) {
-				const button = document.createElement('button');
-				button.type = 'button';
-				button.className = 'segment-pill';
-				button.textContent = i;
-				button.title = `Jump to frame ${i}`;
-				button.addEventListener('click', () => setPosition((i - 1) * segmentDuration));
-				strip.appendChild(button);
-			}
-		}
-
 		function updateCache() {
 			const first = Math.max(1, activeSegment - cacheRadius);
 			const last = Math.min(segmentCount, activeSegment + cacheRadius);
 			for (let number = first; number <= last; number += 1) preload(number);
-			cacheStatus.textContent = `Viewing ${activeSegment} of ${segmentCount}`;
-			const pills = strip.querySelectorAll('.segment-pill');
-			pills.forEach((p, index) => {
-				p.classList.toggle('active', index + 1 === activeSegment);
-			});
+			cacheStatus.textContent = `Frame ${activeSegment} / ${segmentCount}`;
 		}
 
 		function showSegment(number) {
-			activeSegment = Math.max(1, Math.min(segmentCount, number));
+			activeSegment = clamp(number, 1, segmentCount);
 			image.src = srcFor(activeSegment);
 			segmentNumber.textContent = activeSegment;
 			loading.textContent = `Loading frame ${activeSegment}...`;
@@ -295,50 +233,75 @@
 			updateCache();
 		}
 
-		function setPosition(seconds) {
-			elapsed = Math.max(0, Math.min(segmentCount * segmentDuration - 0.01, seconds));
-			const nextSegment = Math.floor(elapsed / segmentDuration) + 1;
-			if (nextSegment !== activeSegment) showSegment(nextSegment);
-			seek.value = elapsed;
-			currentTime.textContent = formatTime(elapsed);
+		function renderFromTime(seconds) {
+			currentTimeValue = clamp(seconds, 0, totalDuration - 0.01);
+			const nextSegment = clamp(Math.floor(currentTimeValue / segmentDuration) + 1, 1, segmentCount);
+			if (nextSegment !== activeSegment) {
+				showSegment(nextSegment);
+			}
+			seek.value = currentTimeValue;
+			currentTime.textContent = formatTime(currentTimeValue);
 		}
 
 		function tick(timestamp) {
 			if (!playing) return;
-			if (!lastFrame) lastFrame = timestamp;
-			const nextElapsed = elapsed + (timestamp - lastFrame) / 1000;
-			setPosition(nextElapsed);
-			lastFrame = timestamp;
-			if (elapsed >= segmentCount * segmentDuration - 0.01) {
+			if (!lastFrameStamp) lastFrameStamp = timestamp;
+			const deltaSeconds = (timestamp - lastFrameStamp) / 1000;
+			const nextTime = currentTimeValue + deltaSeconds;
+			if (nextTime >= totalDuration - 0.01) {
+				renderFromTime(totalDuration - 0.01);
 				playing = false;
 				playButton.textContent = '\u25B6';
 				cancelAnimationFrame(animationFrame);
 				return;
 			}
+			renderFromTime(nextTime);
+			lastFrameStamp = timestamp;
 			animationFrame = requestAnimationFrame(tick);
+		}
+
+		function togglePlayback() {
+			playing = !playing;
+			playButton.textContent = playing ? '\u23F8' : '\u25B6';
+			lastFrameStamp = 0;
+			if (playing) {
+				animationFrame = requestAnimationFrame(tick);
+			} else {
+				cancelAnimationFrame(animationFrame);
+			}
 		}
 
 		image.addEventListener('load', () => {
 			loading.hidden = true;
 		});
 
-		playButton.addEventListener('click', () => {
-			playing = !playing;
-			playButton.textContent = playing ? '\u23F8' : '\u25B6';
-			lastFrame = 0;
+		playButton.addEventListener('click', togglePlayback);
+		document.querySelector('#restart').addEventListener('click', () => {
+			cancelAnimationFrame(animationFrame);
+			playing = false;
+			playButton.textContent = '\u25B6';
+			renderFromTime(0);
+		});
+		document.querySelector('#rewind').addEventListener('click', () => renderFromTime(currentTimeValue - segmentDuration));
+		document.querySelector('#forward').addEventListener('click', () => renderFromTime(currentTimeValue + segmentDuration));
+		document.querySelector('#end').addEventListener('click', () => {
+			cancelAnimationFrame(animationFrame);
+			playing = false;
+			playButton.textContent = '\u25B6';
+			renderFromTime(totalDuration - 0.01);
+		});
+		seek.addEventListener('input', (event) => {
+			cancelAnimationFrame(animationFrame);
 			if (playing) {
-				animationFrame = requestAnimationFrame(tick);
-			} else {
-				cancelAnimationFrame(animationFrame);
+				playing = false;
+				playButton.textContent = '\u25B6';
 			}
+			renderFromTime(Number(event.target.value));
 		});
 
-		document.querySelector('#rewind').addEventListener('click', () => setPosition(elapsed - segmentDuration));
-		document.querySelector('#forward').addEventListener('click', () => setPosition(elapsed + segmentDuration));
-		seek.addEventListener('input', (event) => setPosition(Number(event.target.value)));
-
-		buildSegmentStrip();
-		showSegment(1);
+		seek.max = String(totalDuration);
+		seek.value = '0';
+		renderFromTime(0);
 	</script>
 </body>
 </html>
