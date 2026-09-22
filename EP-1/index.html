@@ -200,7 +200,7 @@
 			</div>
 			<div class="controls">
 				<div class="seek-row">
-					<input id="seek" type="range" min="0" max="1625" value="0" step="1" aria-label="Seek through the episode timeline">
+					<input id="seek" type="range" min="0" max="1600" value="0" step="25" aria-label="Seek through the episode timeline">
 					<span class="time"><span id="current-time">0:00</span> / <span id="total-time">26:48</span></span>
 				</div>
 				<div class="button-row">
@@ -222,7 +222,7 @@
 			starts.push((starts[index - 1] || 0) + (index === 0 ? 0 : segmentDurations[index - 1]));
 			return starts;
 		}, []);
-		const skipDuration = 25;
+		const seekInterval = 25;
 		const cacheRadius = 10;
 		const totalDuration = segmentDurations.reduce((sum, duration) => sum + duration, 0);
 		const image = document.querySelector('#motion');
@@ -281,7 +281,7 @@
 			if (nextSegment !== activeSegment) {
 				showSegment(nextSegment);
 			}
-			seek.value = currentTimeValue;
+			seek.value = (activeSegment - 1) * seekInterval;
 			currentTime.textContent = formatTime(currentTimeValue);
 		}
 
@@ -361,11 +361,11 @@
 		});
 		document.querySelector('#rewind').addEventListener('click', () => {
 			pausePlayback();
-			renderFromTime(currentTimeValue - skipDuration);
+			moveToSegment(activeSegment - 1);
 		});
 		document.querySelector('#forward').addEventListener('click', () => {
 			pausePlayback();
-			renderFromTime(currentTimeValue + skipDuration);
+			moveToSegment(activeSegment + 1);
 		});
 		document.querySelector('#previous-frame').addEventListener('click', () => moveToSegment(activeSegment - 1));
 		document.querySelector('#next-frame').addEventListener('click', () => moveToSegment(activeSegment + 1));
@@ -375,8 +375,7 @@
 		});
 		seek.addEventListener('input', (event) => {
 			pausePlayback();
-			const selectedTime = Number(event.target.value);
-			const selectedSegment = segmentStarts.findIndex((start, index) => selectedTime < start + segmentDurations[index]) + 1;
+			const selectedSegment = Math.round(Number(event.target.value) / seekInterval) + 1;
 			moveToSegment(selectedSegment);
 		});
 
