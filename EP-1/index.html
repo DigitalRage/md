@@ -192,7 +192,7 @@
 			<div class="controls">
 				<div class="seek-row">
 					<input id="seek" type="range" min="0" max="1625" value="0" step="1" aria-label="Seek through the episode timeline">
-					<span class="time"><span id="current-time">0:00</span> / 27:05</span>
+					<span class="time"><span id="current-time">0:00</span> / <span id="total-time">26:48</span></span>
 				</div>
 				<div class="button-row">
 					<button class="skip" id="restart" type="button" aria-label="Restart video">&#9205;</button>
@@ -206,9 +206,14 @@
 	</main>
 	<script>
 		const segmentCount = 65;
-		const segmentDuration = 25;
+		const segmentDurations = Array.from({ length: segmentCount }, (_, index) => index === segmentCount - 1 ? 14.94 : 24.9);
+		const segmentStarts = segmentDurations.reduce((starts, duration, index) => {
+			starts.push((starts[index - 1] || 0) + (index === 0 ? 0 : segmentDurations[index - 1]));
+			return starts;
+		}, []);
+		const skipDuration = 25;
 		const cacheRadius = 10;
-		const totalDuration = segmentCount * segmentDuration;
+		const totalDuration = segmentDurations.reduce((sum, duration) => sum + duration, 0);
 		const image = document.querySelector('#motion');
 		const loading = document.querySelector('#loading');
 		const seek = document.querySelector('#seek');
@@ -257,7 +262,7 @@
 
 		function renderFromTime(seconds) {
 			currentTimeValue = clamp(seconds, 0, totalDuration - 0.01);
-			const nextSegment = clamp(Math.floor(currentTimeValue / segmentDuration) + 1, 1, segmentCount);
+			const nextSegment = segmentStarts.findIndex((start, index) => currentTimeValue < start + segmentDurations[index]) + 1;
 			if (nextSegment !== activeSegment) {
 				showSegment(nextSegment);
 			}
@@ -305,8 +310,8 @@
 			playButton.textContent = '\u25B6';
 			renderFromTime(0);
 		});
-		document.querySelector('#rewind').addEventListener('click', () => renderFromTime(currentTimeValue - segmentDuration));
-		document.querySelector('#forward').addEventListener('click', () => renderFromTime(currentTimeValue + segmentDuration));
+		document.querySelector('#rewind').addEventListener('click', () => renderFromTime(currentTimeValue - skipDuration));
+		document.querySelector('#forward').addEventListener('click', () => renderFromTime(currentTimeValue + skipDuration));
 		document.querySelector('#end').addEventListener('click', () => {
 			cancelAnimationFrame(animationFrame);
 			playing = false;
@@ -325,6 +330,8 @@
 		seek.max = String(totalDuration);
 		seek.value = '0';
 		renderFromTime(0);
+		document.querySelector('#total-time').textContent = formatTime(totalDuration);
+		togglePlayback();
 	</script>
 </body>
 </html>
