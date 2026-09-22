@@ -79,6 +79,14 @@
 			object-fit: contain;
 			background: #000;
 		}
+		#paused-frame {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: contain;
+			background: #000;
+		}
 		.loading {
 			position: absolute;
 			inset: 0;
@@ -182,6 +190,7 @@
 		<div class="player-shell">
 			<div class="screen">
 				<img id="motion" src="MD-EP1-AWEBP/EP1-1.webp" alt="Episode 1 motion frame" loading="eager" decoding="sync">
+				<canvas id="paused-frame" aria-hidden="true" hidden></canvas>
 				<div class="loading" id="loading">Loading segment 1...</div>
 				<div class="hud" aria-live="polite">
 					<strong id="segment-number">1</strong>
@@ -196,9 +205,11 @@
 				</div>
 				<div class="button-row">
 					<button class="skip" id="restart" type="button" aria-label="Restart video">&#9205;</button>
+					<button class="skip" id="previous-frame" type="button" aria-label="Previous frame">&#9664;&#9664;</button>
 					<button class="skip" id="rewind" type="button" aria-label="Rewind 25 seconds">&#8634; 25s</button>
 					<button class="play" id="play" type="button" aria-label="Play or pause">&#9654;</button>
 					<button class="skip" id="forward" type="button" aria-label="Fast forward 25 seconds">25s &#8635;</button>
+					<button class="skip" id="next-frame" type="button" aria-label="Next frame">&#9654;&#9654;</button>
 					<button class="skip" id="end" type="button" aria-label="Jump to end">&#9203;</button>
 				</div>
 			</div>
@@ -215,6 +226,8 @@
 		const cacheRadius = 10;
 		const totalDuration = segmentDurations.reduce((sum, duration) => sum + duration, 0);
 		const image = document.querySelector('#motion');
+		const pausedFrame = document.querySelector('#paused-frame');
+		const pausedFrameContext = pausedFrame.getContext('2d');
 		const loading = document.querySelector('#loading');
 		const seek = document.querySelector('#seek');
 		const currentTime = document.querySelector('#current-time');
@@ -253,6 +266,8 @@
 
 		function showSegment(number) {
 			activeSegment = clamp(number, 1, segmentCount);
+			pausedFrame.hidden = true;
+			image.hidden = false;
 			image.src = srcFor(activeSegment);
 			segmentNumber.textContent = activeSegment;
 			loading.textContent = `Loading frame ${activeSegment}...`;
@@ -288,11 +303,37 @@
 			playing = !playing;
 			playButton.textContent = playing ? '\u23F8' : '\u25B6';
 			if (playing) {
+				pausedFrame.hidden = true;
+				image.hidden = false;
+				image.src = srcFor(activeSegment);
 				playbackStartStamp = performance.now();
 				playbackStartTime = currentTimeValue;
 				animationFrame = requestAnimationFrame(tick);
 			} else {
 				cancelAnimationFrame(animationFrame);
+				freezeCurrentFrame();
+			}
+		}
+
+		function freezeCurrentFrame() {
+			if (!image.complete || !image.naturalWidth) return;
+			pausedFrame.width = image.naturalWidth;
+			pausedFrame.height = image.naturalHeight;
+			pausedFrameContext.drawImage(image, 0, 0);
+			image.hidden = true;
+			pausedFrame.hidden = false;
+		}
+
+		function moveToSegment(number) {
+			const target = clamp(number, 1, segmentCount);
+			renderFromTime(segmentStarts[target - 1]);
+			if (playing) {
+				playbackStartStamp = performance.now();
+				playbackStartTime = currentTimeValue;
+			} else if (image.complete && image.naturalWidth) {
+				freezeCurrentFrame();
+			} else {
+				image.addEventListener('load', freezeCurrentFrame, { once: true });
 			}
 		}
 
@@ -312,6 +353,8 @@
 		});
 		document.querySelector('#rewind').addEventListener('click', () => renderFromTime(currentTimeValue - skipDuration));
 		document.querySelector('#forward').addEventListener('click', () => renderFromTime(currentTimeValue + skipDuration));
+		document.querySelector('#previous-frame').addEventListener('click', () => moveToSegment(activeSegment - 1));
+		document.querySelector('#next-frame').addEventListener('click', () => moveToSegment(activeSegment + 1));
 		document.querySelector('#end').addEventListener('click', () => {
 			cancelAnimationFrame(animationFrame);
 			playing = false;
