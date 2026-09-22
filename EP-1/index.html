@@ -269,9 +269,6 @@
 			pausedFrame.hidden = true;
 			image.hidden = false;
 			image.src = srcFor(activeSegment);
-			if (!playing) {
-				image.addEventListener('load', freezeCurrentFrame, { once: true });
-			}
 			segmentNumber.textContent = activeSegment;
 			loading.textContent = `Loading frame ${activeSegment}...`;
 			loading.hidden = false;
@@ -351,6 +348,7 @@
 
 		image.addEventListener('load', () => {
 			loading.hidden = true;
+			if (!playing) freezeCurrentFrame();
 		});
 		image.addEventListener('error', () => {
 			loading.textContent = `Frame ${activeSegment} failed to load`;
@@ -377,14 +375,15 @@
 		});
 		seek.addEventListener('input', (event) => {
 			pausePlayback();
-			renderFromTime(Number(event.target.value));
+			const selectedTime = Number(event.target.value);
+			const selectedSegment = segmentStarts.findIndex((start, index) => selectedTime < start + segmentDurations[index]) + 1;
+			moveToSegment(selectedSegment);
 		});
 
 		seek.max = String(totalDuration);
 		seek.value = '0';
 		renderFromTime(0);
 		document.querySelector('#total-time').textContent = formatTime(totalDuration);
-		togglePlayback();
 	</script>
 </body>
 </html>
