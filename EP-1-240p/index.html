@@ -223,7 +223,7 @@
 			return starts;
 		}, []);
 		const seekInterval = 25;
-		const cacheRadius = 10;
+		const cacheRadius = 6;
 		const totalDuration = segmentDurations.reduce((sum, duration) => sum + duration, 0);
 		let image = document.querySelector('#motion');
 		const pausedFrame = document.querySelector('#paused-frame');
@@ -262,6 +262,9 @@
 			const first = Math.max(1, activeSegment - cacheRadius);
 			const last = Math.min(segmentCount, activeSegment + cacheRadius);
 			for (let number = first; number <= last; number += 1) preload(number);
+			for (const number of images.keys()) {
+				if (number < first || number > last) images.delete(number);
+			}
 			cacheStatus.textContent = `Frame ${activeSegment} / ${segmentCount}`;
 		}
 
