@@ -237,6 +237,7 @@
 		let playbackStartTime = 0;
 		let segmentTimer;
 		let clockTimer;
+		let imageRequestId = 0;
 
 		const filePrefix = 'MURDERDRONES-Episode1_PILOT-CC-ezgif.com-video-to-webp-converter';
 		const srcFor = number => `MD-EP1-720p-CC/${encodeURI(`${filePrefix} (${number}).webp`)}`;
@@ -266,18 +267,22 @@
 		}
 
 		function replaceImage(number) {
+			const requestId = ++imageRequestId;
 			const nextImage = image.cloneNode(false);
 			nextImage.removeAttribute('src');
 			nextImage.addEventListener('load', () => {
+				if (requestId !== imageRequestId) return;
 				loading.hidden = true;
 				if (!playing) freezeCurrentFrame();
 			});
 			nextImage.addEventListener('error', () => {
+				if (requestId !== imageRequestId) return;
 				loading.textContent = `720p frame ${number} failed to load`;
 			});
 			image.parentNode.replaceChild(nextImage, image);
 			image = nextImage;
-			image.src = playbackSrcFor(number);
+			image.dataset.segment = String(number);
+			image.src = images.get(number)?.src || playbackSrcFor(number);
 		}
 
 		function showSegment(number) {
@@ -344,7 +349,9 @@
 				stopTimers();
 				pausedFrame.hidden = true;
 				image.hidden = false;
-				replaceImage(activeSegment);
+				if (image.dataset.segment !== String(activeSegment)) {
+					replaceImage(activeSegment);
+				}
 				playbackStartStamp = Date.now();
 				playbackStartTime = currentTimeValue;
 				clockTimer = setInterval(updateClock, 250);
