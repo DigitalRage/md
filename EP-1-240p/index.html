@@ -243,6 +243,7 @@
 		let animationFrame;
 
 		const srcFor = number => `MD-EP1-AWEBP/EP1-${number}.webp`;
+		const playbackSrcFor = number => `${srcFor(number)}?segment=${number}`;
 		const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 		const formatTime = seconds => {
 			const mins = Math.floor(seconds / 60);
@@ -253,7 +254,7 @@
 		function preload(number) {
 			if (number < 1 || number > segmentCount || images.has(number)) return;
 			const preloaded = new Image();
-			preloaded.src = srcFor(number);
+			preloaded.src = playbackSrcFor(number);
 			images.set(number, preloaded);
 		}
 
@@ -268,7 +269,7 @@
 			activeSegment = clamp(number, 1, segmentCount);
 			pausedFrame.hidden = true;
 			image.hidden = false;
-			image.src = srcFor(activeSegment);
+			image.src = playbackSrcFor(activeSegment);
 			segmentNumber.textContent = activeSegment;
 			loading.textContent = `Loading frame ${activeSegment}...`;
 			loading.hidden = false;
@@ -305,7 +306,7 @@
 			if (playing) {
 				pausedFrame.hidden = true;
 				image.hidden = false;
-				image.src = srcFor(activeSegment);
+				image.src = playbackSrcFor(activeSegment);
 				playbackStartStamp = performance.now();
 				playbackStartTime = currentTimeValue;
 				animationFrame = requestAnimationFrame(tick);
