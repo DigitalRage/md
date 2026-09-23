@@ -225,7 +225,7 @@
 		const seekInterval = 25;
 		const cacheRadius = 10;
 		const totalDuration = segmentDurations.reduce((sum, duration) => sum + duration, 0);
-		const image = document.querySelector('#motion');
+		let image = document.querySelector('#motion');
 		const pausedFrame = document.querySelector('#paused-frame');
 		const pausedFrameContext = pausedFrame.getContext('2d');
 		const loading = document.querySelector('#loading');
@@ -265,11 +265,26 @@
 			cacheStatus.textContent = `Frame ${activeSegment} / ${segmentCount}`;
 		}
 
+		function replaceImage(number) {
+			const nextImage = image.cloneNode(false);
+			nextImage.removeAttribute('src');
+			nextImage.addEventListener('load', () => {
+				loading.hidden = true;
+				if (!playing) freezeCurrentFrame();
+			});
+			nextImage.addEventListener('error', () => {
+				loading.textContent = `240p frame ${number} failed to load`;
+			});
+			image.parentNode.replaceChild(nextImage, image);
+			image = nextImage;
+			image.src = playbackSrcFor(number);
+		}
+
 		function showSegment(number) {
 			activeSegment = clamp(number, 1, segmentCount);
 			pausedFrame.hidden = true;
 			image.hidden = false;
-			image.src = playbackSrcFor(activeSegment);
+			replaceImage(activeSegment);
 			segmentNumber.textContent = activeSegment;
 			loading.textContent = `Loading frame ${activeSegment}...`;
 			loading.hidden = false;
@@ -306,7 +321,7 @@
 			if (playing) {
 				pausedFrame.hidden = true;
 				image.hidden = false;
-				image.src = playbackSrcFor(activeSegment);
+				replaceImage(activeSegment);
 				playbackStartStamp = performance.now();
 				playbackStartTime = currentTimeValue;
 				animationFrame = requestAnimationFrame(tick);
@@ -346,14 +361,6 @@
 				image.addEventListener('load', freezeCurrentFrame, { once: true });
 			}
 		}
-
-		image.addEventListener('load', () => {
-			loading.hidden = true;
-			if (!playing) freezeCurrentFrame();
-		});
-		image.addEventListener('error', () => {
-			loading.textContent = `Frame ${activeSegment} failed to load`;
-		});
 
 		playButton.addEventListener('click', togglePlayback);
 		document.querySelector('#restart').addEventListener('click', () => {
