@@ -235,7 +235,8 @@
 		let playing = false;
 		let playbackStartStamp = 0;
 		let playbackStartTime = 0;
-		let animationFrame;
+		let segmentTimer;
+		let clockTimer;
 
 		const filePrefix = 'MURDERDRONES-Episode1_PILOT-CC-ezgif.com-video-to-webp-converter';
 		const srcFor = number => `MD-EP1-720p-CC/${encodeURI(`${filePrefix} (${number}).webp`)}`;
@@ -274,39 +275,63 @@
 		function renderFromTime(seconds) {
 			currentTimeValue = clamp(seconds, 0, totalDuration - 0.01);
 			const nextSegment = clamp(Math.floor(currentTimeValue / segmentDuration) + 1, 1, segmentCount);
-			if (nextSegment !== activeSegment) {
+			if (nextSegment !== activeSegment || !image.src) {
 				showSegment(nextSegment);
 			}
 			seek.value = currentTimeValue;
 			currentTime.textContent = formatTime(currentTimeValue);
 		}
 
-		function tick(timestamp) {
+		function stopTimers() {
+			clearTimeout(segmentTimer);
+			clearInterval(clockTimer);
+		}
+
+		function updateClock() {
 			if (!playing) return;
-			const nextTime = playbackStartTime + (timestamp - playbackStartStamp) / 1000;
-			if (nextTime >= totalDuration - 0.01) {
+			const elapsed = playbackStartTime + (Date.now() - playbackStartStamp) / 1000;
+			if (elapsed >= totalDuration - 0.01) {
 				renderFromTime(totalDuration - 0.01);
 				playing = false;
 				playButton.textContent = '\u25B6';
-				cancelAnimationFrame(animationFrame);
+				stopTimers();
 				return;
 			}
-			renderFromTime(nextTime);
-			animationFrame = requestAnimationFrame(tick);
+			renderFromTime(elapsed);
+		}
+
+		function scheduleNextSegment() {
+			const nextBoundary = activeSegment * segmentDuration;
+			const remaining = Math.max(0.05, nextBoundary - currentTimeValue);
+			segmentTimer = setTimeout(() => {
+				if (!playing) return;
+				const nextSegment = activeSegment + 1;
+				if (nextSegment > segmentCount) {
+					renderFromTime(totalDuration - 0.01);
+					playing = false;
+					playButton.textContent = '\u25B6';
+					stopTimers();
+					return;
+				}
+				renderFromTime((nextSegment - 1) * segmentDuration);
+				scheduleNextSegment();
+			}, remaining * 1000);
 		}
 
 		function togglePlayback() {
 			playing = !playing;
 			playButton.textContent = playing ? '\u23F8' : '\u25B6';
 			if (playing) {
+				stopTimers();
 				pausedFrame.hidden = true;
 				image.hidden = false;
 				image.src = srcFor(activeSegment);
-				playbackStartStamp = performance.now();
+				playbackStartStamp = Date.now();
 				playbackStartTime = currentTimeValue;
-				animationFrame = requestAnimationFrame(tick);
+				clockTimer = setInterval(updateClock, 250);
+				scheduleNextSegment();
 			} else {
-				cancelAnimationFrame(animationFrame);
+				stopTimers();
 				if (image.complete && image.naturalWidth) {
 					freezeCurrentFrame();
 				} else {
@@ -317,7 +342,7 @@
 
 		function pausePlayback() {
 			if (playing) togglePlayback();
-			else cancelAnimationFrame(animationFrame);
+			else stopTimers();
 		}
 
 		function freezeCurrentFrame() {
@@ -333,8 +358,11 @@
 			const target = clamp(number, 1, segmentCount);
 			renderFromTime((target - 1) * segmentDuration);
 			if (playing) {
-				playbackStartStamp = performance.now();
+				playbackStartStamp = Date.now();
 				playbackStartTime = currentTimeValue;
+				stopTimers();
+				clockTimer = setInterval(updateClock, 250);
+				scheduleNextSegment();
 			} else if (image.complete && image.naturalWidth) {
 				freezeCurrentFrame();
 			} else {
