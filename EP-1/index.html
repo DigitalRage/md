@@ -189,7 +189,7 @@
 	<main>
 		<div class="player-shell">
 			<div class="screen">
-				<img id="motion" alt="Episode 1 motion frame" loading="eager" decoding="sync">
+				<img id="motion" src="MD-EP1-720p-CC/MURDERDRONES-Episode1_PILOT-CC-ezgif.com-video-to-webp-converter%20(1).webp" alt="Episode 1 720p motion frame" loading="eager" decoding="sync">
 				<canvas id="paused-frame" aria-hidden="true" hidden></canvas>
 				<div class="loading" id="loading">Loading segment 1...</div>
 				<div class="hud" aria-live="polite">
@@ -238,7 +238,7 @@
 		let animationFrame;
 
 		const filePrefix = 'MURDERDRONES-Episode1_PILOT-CC-ezgif.com-video-to-webp-converter';
-		const srcFor = number => `MD-EP1-720p-CC/${encodeURIComponent(`${filePrefix} (${number}).webp`)}`;
+		const srcFor = number => `MD-EP1-720p-CC/${encodeURI(`${filePrefix} (${number}).webp`)}`;
 		const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 		const formatTime = seconds => {
 			const mins = Math.floor(seconds / 60);
@@ -347,7 +347,8 @@
 			if (!playing) freezeCurrentFrame();
 		});
 		image.addEventListener('error', () => {
-			loading.textContent = `Frame ${activeSegment} failed to load`;
+			loading.textContent = `720p frame ${activeSegment} failed to load`;
+			image.removeAttribute('src');
 		});
 
 		playButton.addEventListener('click', togglePlayback);
