@@ -20,7 +20,7 @@
 (function(){
 'use strict';
 /* Compatibility target: old WebKit/NetFront-style captive-portal browser.
-   No external assets, no audio/video, no WebGL, no module loading, no modern syntax. */
+   No external assets, no audio/video, no advanced 3D APIs, no module loading, no modern syntax. */
 var canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
 var W=800,H=450,STEP=1/60,MAX_STEPS=3,acc=0,last=0;
 var menu=document.getElementById('menu'),pause=document.getElementById('pause'),levelsEl=document.getElementById('levels');
@@ -154,7 +154,7 @@ function render(){
  var px=player.x+player.r,py=player.y+player.r;ctx.save();ctx.translate(px,py);ctx.rotate(player.rot);ctx.fillStyle=level.color;ctx.fillRect(-18,-18,36,36);ctx.fillStyle='#07101f';ctx.fillRect(-11,-11,22,22);ctx.fillStyle='#fff';ctx.fillRect(-8,-7,5,5);ctx.fillRect(3,-7,5,5);ctx.fillRect(-8,7,16,4);ctx.restore();
 }
 function loop(now){if(!last)last=now;var dt=(now-last)/1000;if(dt>.08)dt=.08;last=now;if(gameRunning()&&!paused){acc+=dt;var n=0;while(acc>=STEP&&n<MAX_STEPS){update();acc-=STEP;n++;}}render();requestAnimationFrame(loop);}
-renderLevels();buildLevel();requestAnimationFrame(loop);
+renderLevels();requestAnimationFrame(loop);
 })();
 </script>
 </body>
