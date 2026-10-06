@@ -101,29 +101,62 @@ function crash(){if(!player.alive)return;player.alive=false;statusEl.textContent
 function jump(power){player.vy=-power*gravity;player.onGround=false;burst(player.x+player.r,player.y+player.r,7,level.color);}
 function update(){
  if(!player.alive){updateParticles();return;}
- gravityCooldown=Math.max(0,gravityCooldown-1);worldX=camera+player.x;
+ gravityCooldown=Math.max(0,gravityCooldown-1);
+ worldX=camera+player.x;
  var target=level.speed,i,o;
- for(i=0;i<objects.length;i++){o=objects[i];if(o.type==='speed'&&worldX+player.r>o.x&&worldX-player.r<o.x+o.w)target=level.speed*o.mult;}
- speed+=(target-speed)*.08;camera+=speed;worldX=camera+player.x;
- var pressed=jumpQueued;if(jumpQueued){if(player.onGround)jump(15.2);jumpQueued=false;}
- player.vy+=0.82*gravity;player.y+=player.vy;
- var floor=groundY(worldX);
- if(gravity===1){if(player.y+player.r*2>=floor){player.y=floor-player.r*2;player.vy=0;player.onGround=true;}else player.onGround=false;}
- else{if(player.y<=CEIL){player.y=CEIL;player.vy=0;player.onGround=true;}else player.onGround=false;}
- if(player.onGround)player.rot=Math.round(player.rot/(Math.PI/2))*Math.PI/2;else player.rot+=.14*gravity;
+ /* World-space speed portals affect the actual run speed. */
  for(i=0;i<objects.length;i++){
-  o=objects[i];if(o.x>worldX+W+80||o.x+o.w<worldX-100)continue;
-  if(o.type==='spike'&&circleSpike(player.x+player.r,player.y+player.r,player.r,o))crash();
-  else if(o.type==='block'&&circleRect(player.x+player.r,player.y+player.r,player.r,o.x,o.y,o.w,o.h)){
+  o=objects[i];
+  if(o.type==='speed'&&worldX+player.r>o.x&&worldX-player.r<o.x+o.w)target=level.speed*o.mult;
+ }
+ speed+=(target-speed)*.08;
+ camera+=speed;
+ worldX=camera+player.x;
+ var pressed=jumpQueued;
+ jumpQueued=false;
+ if(pressed&&player.onGround)jump(15.2);
+ player.vy+=0.82*gravity;
+ player.y+=player.vy;
+ var floor=groundY(worldX);
+ if(gravity===1){
+  if(player.y+player.r*2>=floor){
+   player.y=floor-player.r*2;player.vy=0;player.onGround=true;
+  }else player.onGround=false;
+ }else{
+  if(player.y<=CEIL){player.y=CEIL;player.vy=0;player.onGround=true;}
+  else player.onGround=false;
+ }
+ if(player.onGround)player.rot=Math.round(player.rot/(Math.PI/2))*Math.PI/2;
+ else player.rot+=.14*gravity;
+ var cx=worldX+player.r,cy=player.y+player.r;
+ for(i=0;i<objects.length;i++){
+  o=objects[i];
+  /* All gameplay collision tests below use WORLD coordinates. */
+  if(o.x>worldX+W+80||o.x+o.w<worldX-100)continue;
+  if(o.type==='spike'){
+   if(circleSpike(cx,cy,player.r,o))crash();
+  }else if(o.type==='block'){
+   if(circleRect(cx,cy,player.r,o.x,o.y,o.w,o.h)){
     var falling=gravity===1?player.vy>=0:player.vy<=0;
-    if(falling&&((gravity===1&&player.y+player.r*2-o.y<15)||(gravity===-1&&o.y+o.h-player.y<15))){player.y=gravity===1?o.y-player.r*2:o.y+o.h;player.vy=0;player.onGround=true;}else crash();
-  } else if(o.type==='pad'&&circleRect(player.x+player.r,player.y+player.r,player.r,o.x,o.y,o.w,o.h)&&player.onGround)jump(o.power);
-  else if(o.type==='ring'&&!o.used&&pressed&&circleRect(player.x+player.r,player.y+player.r,player.r,o.x,o.y,o.w,o.h)){jump(o.power);o.used=true;}
-  else if(o.type==='grav'&&worldX+player.r>o.x&&worldX-player.r<o.x+o.w)enterGravity(o.dir);
-  else if(o.type==='coin'&&!o.got&&circleRect(player.x+player.r,player.y+player.r,player.r,o.x,o.y,o.w,o.h)){o.got=true;coins++;burst(o.x+12,o.y+12,8,'#ffd166');}
+    if(falling&&((gravity===1&&cy+player.r-o.y<16)||(gravity===-1&&o.y+o.h-(cy-player.r)<16))){
+     if(gravity===1)player.y=o.y-player.r*2;
+     else player.y=o.y+o.h;
+     player.vy=0;player.onGround=true;
+    }else crash();
+   }
+  }else if(o.type==='pad'){
+   if(circleRect(cx,cy,player.r,o.x,o.y,o.w,o.h)&&player.onGround)jump(o.power);
+  }else if(o.type==='ring'){
+   if(!o.used&&pressed&&circleRect(cx,cy,player.r,o.x,o.y,o.w,o.h)){jump(o.power);o.used=true;}
+  }else if(o.type==='grav'){
+   if(gravityCooldown===0&&worldX+player.r>o.x&&worldX-player.r<o.x+o.w)enterGravity(o.dir);
+  }else if(o.type==='coin'){
+   if(!o.got&&circleRect(cx,cy,player.r,o.x,o.y,o.w,o.h)){o.got=true;coins++;burst(o.x+12,o.y+12,8,'#ffd166');}
+  }
  }
  if(practice&&camera>checkpoint.camera+950)checkpoint={camera:camera,y:player.y,gravity:gravity,speed:speed};
- var pct=Math.floor(Math.max(0,Math.min(100,camera/level.length*100)));pctEl.textContent=pct+'%';fillEl.style.width=pct+'%';modeEl.textContent=gravity===1?'CUBE':'CUBE ↑';coinsEl.textContent=coins+'/'+totalCoins;
+ var pct=Math.floor(Math.max(0,Math.min(100,camera/level.length*100)));
+ pctEl.textContent=pct+'%';fillEl.style.width=pct+'%';modeEl.textContent=gravity===1?'CUBE':'CUBE ↑';coinsEl.textContent=coins+'/'+totalCoins;
  if(pct>(best[levelIndex]||0)){best[levelIndex]=pct;try{localStorage.setItem('geodashSwitchBest',JSON.stringify(best));}catch(e){}}
  if(camera>=level.length){finish++;statusEl.textContent='FINISH';if(finish>20){menu.style.display='flex';jumpBtn.style.display='none';renderLevels();finish=0;}}
  updateParticles();
