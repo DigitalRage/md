@@ -68,9 +68,9 @@ function buildLevel(){
  objects=[];solids=[];decor=[];stars=[];particles=[];coins=0;totalCoins=0;finish=0;
  var x=0,i,kind;
  /* Continuous floor is deliberate: hazards are placed on top of a stable route rather than randomly changing terrain. */
- for(x=0;x<level.length+1000;x+=560){
+ i=0;for(x=0;x<level.length+1000;x+=560){
    decor.push({x:x+70,w:80,h:70+(i%3)*25});
-   i=(i||0)+1;
+   i++;
  }
  x=620; i=0;
  while(x<level.length-700){kind=i%10;section(x,kind);if(i%3===1)addCoin(x+390,groundY(x+390)-90);x+=420;i++;}
@@ -84,10 +84,10 @@ function snapToSurface(){
  player.vy=0;player.onGround=true;player.rot=0;
 }
 function enterGravity(dir){if(gravityCooldown>0)return;gravity=dir;gravityCooldown=12;snapToSurface();burst(player.x+player.r,player.y+player.r,14,'#ffd166');}
-function startLevel(){level=levels[levelIndex];buildLevel();menu.style.display='none';pause.style.display='none';paused=false;attempt=1;nameEl.textContent=level.name.toUpperCase();statusEl.style.color=level.color;jumpBtn.style.display='block';camera=0;worldX=player.x;speed=level.speed;gravity=1;gravityCooldown=0;player.alive=true;checkpoint={camera:0,y:groundY(player.x)-player.r*2,gravity:1,speed:level.speed};resetRun(false);}
+function startLevel(){try{level=levels[levelIndex];if(!level)return;buildLevel();camera=0;worldX=player.x;speed=level.speed;gravity=1;gravityCooldown=0;player.alive=true;paused=false;attempt=1;checkpoint={camera:0,y:groundY(player.x)-player.r*2,gravity:1,speed:level.speed};resetRun(false);nameEl.textContent=level.name.toUpperCase();statusEl.textContent='ATTEMPT 1';statusEl.style.color=level.color;menu.style.display='none';pause.style.display='none';jumpBtn.style.display='block';}catch(e){level=null;menu.style.display='flex';jumpBtn.style.display='none';statusEl.textContent='ERROR';if(window.console)console.error(e);}}
 function resetRun(fromCheckpoint){camera=fromCheckpoint?checkpoint.camera:0;worldX=camera+player.x;gravity=fromCheckpoint?checkpoint.gravity:1;speed=fromCheckpoint?checkpoint.speed:level.speed;player.y=fromCheckpoint?checkpoint.y:groundY(worldX)-player.r*2;player.vy=0;player.onGround=true;player.alive=true;player.rot=0;gravityCooldown=0;statusEl.textContent='ATTEMPT '+attempt;}
 function gameRunning(){return menu.style.display==='none'&&pause.style.display!=='flex';}
-function choose(i){levelIndex=i;startLevel();}
+function choose(i){i=parseInt(i,10);if(isNaN(i)||i<0||i>=levels.length)return;levelIndex=i;startLevel();}
 function renderLevels(){levelsEl.innerHTML='';for(var i=0;i<levels.length;i++){(function(n){var b=document.createElement('button'),v=best[n]||0;b.className='level';b.innerHTML='<span class="num">0'+(n+1)+' // '+levels[n].diff+'</span><h2>'+levels[n].name+'</h2><p>'+levels[n].sub+'<br>Length: '+levels[n].length+'m · Best: '+v+'%</p>';b.onclick=function(){choose(n);};levelsEl.appendChild(b);})(i);}practiceBtn.textContent='Practice Mode: '+(practice?'ON':'OFF');}
 function queueJump(){if(!gameRunning())return;if(!player.alive){resetRun(practice);return;}jumpQueued=true;}
 function keydown(e){var c=e.code||e.key;keys[c]=1;if(c==='Space'||c==='ArrowUp'||c==='KeyA'||c==='KeyB'||c==='KeyX'||c==='KeyY'||c==='KeyZ'||c==='ShiftLeft'||c==='ShiftRight'||c==='ControlLeft'||c==='ControlRight'){e.preventDefault();queueJump();}if(c==='Minus'||c==='NumpadSubtract'||c==='Escape'){if(menu.style.display==='none'){paused=!paused;pause.style.display=paused?'flex':'none';}}}
@@ -133,13 +133,14 @@ function updateParticles(){for(var i=particles.length-1;i>=0;i--){var p=particle
 function render(){
  var i,s,x,o;
  ctx.fillStyle='#070914';ctx.fillRect(0,0,W,H);
- ctx.fillStyle=level?level.color:'#4be7ff';ctx.globalAlpha=.035;ctx.fillRect(0,70,W,160);ctx.globalAlpha=1;
+ if(!level){ctx.fillStyle='#0d1730';ctx.fillRect(0,H-72,W,72);ctx.fillStyle='#4be7ff';ctx.fillRect(0,H-72,W,3);return;}
+ ctx.fillStyle=level.color;ctx.globalAlpha=.035;ctx.fillRect(0,70,W,160);ctx.globalAlpha=1;
  ctx.fillStyle='#101936';for(i=0;i<10;i++){x=((i*180-camera*.12)%(W+180));if(x<0)x+=W+180;ctx.fillRect(x,90-(i%3)*9,105,210+(i%4)*35);}
  ctx.fillStyle='#151f3c';ctx.fillRect(0,H-72,W,72);
  ctx.strokeStyle='rgba(110,190,255,.07)';ctx.lineWidth=1;for(i=0;i<7;i++){ctx.beginPath();ctx.moveTo(0,110+i*42);ctx.lineTo(W,110+i*42);ctx.stroke();}
  for(i=0;i<stars.length;i++){s=stars[i];x=(s.x-camera*.16)%level.length;if(x<0)x+=level.length;ctx.globalAlpha=s.a;ctx.fillStyle='#d8edff';ctx.fillRect(x,s.y,s.s,s.s);}ctx.globalAlpha=1;
  /* Clean architectural floor and obstacle rendering. */
- ctx.fillStyle='#0d1730';ctx.fillRect(0,H-72,W,72);ctx.fillStyle=level.color;ctx.fillRect(0,H-72,W,3);
+ ctx.fillStyle='#0d1730';ctx.fillRect(0,H-72,W,72);ctx.fillStyle=level?level.color:'#4be7ff';ctx.fillRect(0,H-72,W,3);
  for(i=0;i<decor.length;i++){s=decor[i];x=s.x-camera;if(x<-120||x>W+120)continue;ctx.fillStyle='#0e1830';ctx.fillRect(x,H-72-s.h,s.w,s.h);ctx.fillStyle='#18264a';ctx.fillRect(x+8,H-72-s.h+8,s.w-16,3);}
  for(i=0;i<objects.length;i++){o=objects[i];x=o.x-camera;if(x<-80||x>W+80)continue;
   if(o.type==='spike'){ctx.fillStyle='#ff5b9b';ctx.beginPath();if(o.ceiling){ctx.moveTo(x,o.y);ctx.lineTo(x+o.w/2,o.y+o.h);ctx.lineTo(x+o.w,o.y);}else{ctx.moveTo(x,o.y+o.h);ctx.lineTo(x+o.w/2,o.y);ctx.lineTo(x+o.w,o.y+o.h);}ctx.closePath();ctx.fill();}
@@ -153,8 +154,10 @@ function render(){
  for(i=0;i<particles.length;i++){var p=particles[i];ctx.globalAlpha=Math.max(0,p.life/35);ctx.fillStyle=p.c;ctx.fillRect(p.x-camera,p.y,p.s,p.s);}ctx.globalAlpha=1;
  var px=player.x+player.r,py=player.y+player.r;ctx.save();ctx.translate(px,py);ctx.rotate(player.rot);ctx.fillStyle=level.color;ctx.fillRect(-18,-18,36,36);ctx.fillStyle='#07101f';ctx.fillRect(-11,-11,22,22);ctx.fillStyle='#fff';ctx.fillRect(-8,-7,5,5);ctx.fillRect(3,-7,5,5);ctx.fillRect(-8,7,16,4);ctx.restore();
 }
-function loop(now){if(!last)last=now;var dt=(now-last)/1000;if(dt>.08)dt=.08;last=now;if(gameRunning()&&!paused){acc+=dt;var n=0;while(acc>=STEP&&n<MAX_STEPS){update();acc-=STEP;n++;}}render();requestAnimationFrame(loop);}
-renderLevels();requestAnimationFrame(loop);
+function frameNow(){return (new Date()).getTime();}
+function schedule(fn){if(window.requestAnimationFrame)window.requestAnimationFrame(fn);else window.setTimeout(function(){fn(frameNow());},16);}
+function loop(now){if(!now)now=frameNow();if(!last)last=now;var dt=(now-last)/1000;if(dt>.08)dt=.08;last=now;if(gameRunning()&&!paused){acc+=dt;var n=0;while(acc>=STEP&&n<MAX_STEPS){update();acc-=STEP;n++;}}render();schedule(loop);}
+renderLevels();schedule(loop);
 })();
 </script>
 </body>
